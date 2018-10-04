@@ -1,4 +1,4 @@
-# condaenv
+# condaenv - a working replacement of the conda env command
 
 `$ conda env -f environment.yaml` doesnt follow your instructions. It will
 happily create an environment that does not respect the channels and versions
