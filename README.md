@@ -1,8 +1,9 @@
-# condaenv - a working replacement of the conda env command
+# condaenv
+### a working replacement of the conda env command
 
 `$ conda env -f environment.yaml` doesnt follow your instructions. It will
 happily create an environment that does not respect the channels and versions
-of dependencies (`channel-name::package=version`). This is unacceptable.
+of dependencies (`channel-name::package=version`) you specified. This is unacceptable.
 Maintaining a conda `environment.yaml` of any complexity feels like
 
 ![conda env workflow](.conda.gif?raw=true "Im Serious")
