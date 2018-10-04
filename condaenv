@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+import os.path
+import tempfile
+import subprocess
+
+
+
+def extract_conda(dat):
+    deps = []
+    for d in dat['dependencies']:
+        try:
+            d['pip']
+            continue
+        except TypeError:
+            deps.append(d)
+    return deps
+
+def extract_pip(dat):
+    pass
+
+def load_yaml(path):
+    import yaml
+    # from ruamel import yaml
+    with open(path, 'rt') as f:
+        return yaml.load(f)
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f','--file', required=True)
+    parser.add_argument('-n','--name')
+    args = parser.parse_args()
+
+    dat = load_yaml(args.file)
+
+    name = args.name
+    try:
+        if not name:
+            name = dat['name']
+    except KeyError:
+        pass
+    if not name:
+        parser.error('-n, --name=NAME is required')
+
+    args = ['conda', 'create', '-n', name]
+
+    cdeps = extract_conda(dat)
+
+    chans = {}
+    for chan in dat.get('channels', []):
+        args.extend(['--channel', chan])
+        chans[chan] = True
+
+    for d in cdeps:
+        try:
+            chan, _ = d.split('::')
+        except ValueError:
+            parser.error('dependencies must indicate channel: %s' % d)
+
+        if chan not in chans:
+            args.extend(['--channel', chan])
+            chans[chan] = True
+
+    args.append('--override-channels')
+
+    td = tempfile.mkdtemp()
+    if 0:
+        reqs_file = os.path.join(td, 'packages.yaml')
+        with open(reqs_file, 'wt') as f:
+            f.write('\n'.join(cdeps))
+        args.extend(['--file', reqs_file])
+    else:
+        args.extend(cdeps)
+
+    print args
+
+    try:
+        subprocess.check_call(args)
+    except subprocess.CalledProcessError:
+        print "\nIF CONDA HAS AN UNFALSIFIABLE ERROR, IGNORE ITS BAD ADVICE"
+        print "YOU CAN TYPE FOR EXAMPLE TO LEARN ABOUT PACKAGE DEPENDENCIES"
+        print "\n\tconda search --info 'conda-forge::scikit-learn=0.19.0'\n"
+
