@@ -120,8 +120,19 @@ if __name__ == "__main__":
             with os.fdopen(fd, 'wt') as f:
                 f.write('\n'.join(pdeps))
 
-            proc_args = [pyexe, '-m', 'pip', 'install', '-r', path]
+#             proc_args = [pyexe, '-m', 'pip', 'install', '-r', path]
+#             shell = False
+#             executable = None
+
+            # we need to do this in a full subshell so that all the PATH and friends are
+            # available for packages that build native code and they themselves call out
+            # to pkg-config subshells
+            proc_args = ' '.join(['source', 'activate', name, ';'] + proc_args)
+            shell = True
+            executable = '/bin/bash'
+
             print proc_args
-            subprocess.check_call(proc_args)
+            subprocess.check_call(proc_args, shell=shell, executable=executable)
+
 #             os.unlink(path)
 
