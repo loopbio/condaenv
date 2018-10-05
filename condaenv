@@ -17,19 +17,42 @@ def extract_conda(dat):
     return deps
 
 def extract_pip(dat):
-    pass
+    for d in dat['dependencies']:
+        try:
+            return d['pip']
+        except TypeError:
+            continue
+    return []
 
 def load_yaml(path):
-    import yaml
-    # from ruamel import yaml
+    try:
+        import yaml
+    except ImportError:
+        raise SystemExit('ERROR: missing yaml - please run: conda install -n root pyyaml')
     with open(path, 'rt') as f:
         return yaml.load(f)
+
+
+def get_python_interpreter(env_name):
+    import json
+
+    try:
+        dat = json.loads(subprocess.check_output(['conda', 'env', 'list', '--json']))
+        for e in dat['envs']:
+            if os.path.basename(e) == env_name:
+                return os.path.join(e, 'bin', 'python')
+    except:
+        pass
+
+    return None
+
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-f','--file', required=True)
+    parser.add_argument('--force', action='store_true')
     parser.add_argument('-n','--name')
     args = parser.parse_args()
 
@@ -44,13 +67,20 @@ if __name__ == "__main__":
     if not name:
         parser.error('-n, --name=NAME is required')
 
-    args = ['conda', 'create', '-n', name]
+
+    proc_args = ['conda', 'create', '-n', name]
+
+    if args.force:
+        # does not error if env doesnt exist
+        # fixme: this should be different depending on if we are pretending
+        # to be conda env create or conda env upgrade
+        subprocess.check_call(['conda', 'remove', '-n', name, '--all', '-y'])
 
     cdeps = extract_conda(dat)
 
     chans = {}
     for chan in dat.get('channels', []):
-        args.extend(['--channel', chan])
+        proc_args.extend(['--channel', chan])
         chans[chan] = True
 
     for d in cdeps:
@@ -63,23 +93,35 @@ if __name__ == "__main__":
             args.extend(['--channel', chan])
             chans[chan] = True
 
-    args.append('--override-channels')
+    # this command should be the whole world. user defaults have no place here
+    proc_args.extend(['--override-channels', '--no-channel-priority'])
 
-    td = tempfile.mkdtemp()
-    if 0:
-        reqs_file = os.path.join(td, 'packages.yaml')
-        with open(reqs_file, 'wt') as f:
-            f.write('\n'.join(cdeps))
-        args.extend(['--file', reqs_file])
-    else:
-        args.extend(cdeps)
+    # add dependencies to command line
+    proc_args.extend(cdeps)
 
-    print args
+    print proc_args
 
     try:
-        subprocess.check_call(args)
+        subprocess.check_call(proc_args)
     except subprocess.CalledProcessError:
         print "\nIF CONDA HAS AN UNFALSIFIABLE ERROR, IGNORE ITS BAD ADVICE"
         print "YOU CAN TYPE FOR EXAMPLE TO LEARN ABOUT PACKAGE DEPENDENCIES"
         print "\n\tconda search --info 'conda-forge::scikit-learn=0.19.0'\n"
+        parser.exit(1)
+
+    # command exited successfully
+
+    pyexe = get_python_interpreter(name)
+    if pyexe:
+        # we succeeded / user didnt abort
+        pdeps = extract_pip(dat)
+        if pdeps:
+            fd, path = tempfile.mkstemp(suffix='requirements.txt', text=True)
+            with os.fdopen(fd, 'wt') as f:
+                f.write('\n'.join(pdeps))
+
+            proc_args = [pyexe, '-m', 'pip', 'install', '-r', path]
+            print proc_args
+            subprocess.check_call(proc_args)
+#             os.unlink(path)
 
