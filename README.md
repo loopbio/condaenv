@@ -47,12 +47,4 @@ If you want to use conda envs `environment.yaml` then the only way to guarentee 
 
 A 'known' [workaround](https://github.com/conda/conda/issues/6385#issuecomment-361787360) has been to just call `conda create` **not conda env** with all the packages in the environment yaml. **That's what this tool does**
 
-TL/DR: let's use the (hashed) build string to ensure conda gets our packages until channel pins in environment.yaml files get respected. From there, we should also try to use "locked" (aka "explicit") environments - although that is more of an upcoming conda feature than a reality in the conda 4.5 series.
-
-In principle this is fixed in conda 4.6, but moving to a major new version of a tool which you already do not have the most trust in, is a scary affair. For now this tool does the same thing.
-
-## Other Notes
-
-In this particular case, if no channel pin is present, I think opencv from conda-forge is preferred because they start their build numbers on 200, which is a trick used to enforce a preferred default for packages with variants specified via "conda features". It is inherited from the blas package and hopefully won't be needed once conda features are phased out themselves (a lot of work has been done and conda features are now finally and happily discouraged as a mechanism to differentiate package variants).
-
-
+In principle this is fixed in conda 4.6.
