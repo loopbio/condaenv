@@ -120,7 +120,7 @@ if __name__ == "__main__":
             with os.fdopen(fd, 'wt') as f:
                 f.write('\n'.join(pdeps))
 
-#             proc_args = [pyexe, '-m', 'pip', 'install', '-r', path]
+            proc_args = [pyexe, '-m', 'pip', 'install', '-r', path]
 #             shell = False
 #             executable = None
 
