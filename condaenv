@@ -54,6 +54,8 @@ if __name__ == "__main__":
     parser.add_argument('-f','--file', required=True)
     parser.add_argument('--force', action='store_true')
     parser.add_argument('-n','--name')
+    parser.add_argument('--download-only', action='store_true')
+    parser.add_argument('--download-dir', default='./CACHE', help='used when --download-only requested default="./CACHE"')
     args = parser.parse_args()
 
     dat = load_yaml(args.file)
@@ -69,6 +71,16 @@ if __name__ == "__main__":
 
 
     proc_args = ['conda', 'create', '-n', name]
+    proc_env = os.environ.copy()  # shell environment to run conda in
+
+    if args.download_only:
+        proc_args.append('--download-only')
+        pkgs_dirs = os.path.abspath(os.path.expanduser(args.download_dir))
+        if not os.path.exists(pkgs_dirs):
+            os.makedirs(pkgs_dirs)
+        elif not os.path.isdir(pkgs_dirs):
+            raise SystemExit('ERROR: requested download dir "%s" not a directory' % pkgs_dirs)
+        proc_env['CONDA_PKGS_DIRS'] = pkgs_dirs
 
     if args.force:
         # does not error if env doesnt exist
@@ -102,7 +114,7 @@ if __name__ == "__main__":
     print proc_args
 
     try:
-        subprocess.check_call(proc_args)
+        subprocess.check_call(proc_args, env=proc_env)
     except subprocess.CalledProcessError:
         print "\nIF CONDA HAS AN UNFALSIFIABLE ERROR, IGNORE ITS BAD ADVICE"
         print "YOU CAN TYPE FOR EXAMPLE TO LEARN ABOUT PACKAGE DEPENDENCIES"
