@@ -57,6 +57,7 @@ if __name__ == "__main__":
     parser.add_argument('--download-only', action='store_true')
     parser.add_argument('--download-dir', default='./CACHE', help='used when --download-only requested default="./CACHE"')
     parser.add_argument('-y', '--yes', action='store_true')
+    parser.add_argument('--update', action='store_true', help='update instead of creating the env')
     args = parser.parse_args()
 
     dat = load_yaml(args.file)
@@ -70,8 +71,13 @@ if __name__ == "__main__":
     if not name:
         parser.error('-n, --name=NAME is required')
 
+    if not args.update:
+        proc_cmd = 'create'
+    else:
+        proc_cmd = 'install'
 
-    proc_args = ['conda', 'create', '-n', name]
+
+    proc_args = ['conda', proc_cmd, '-n', name]
     proc_env = os.environ.copy()  # shell environment to run conda in
 
     if args.download_only:
@@ -83,7 +89,7 @@ if __name__ == "__main__":
             raise SystemExit('ERROR: requested download dir "%s" not a directory' % pkgs_dirs)
         proc_env['CONDA_PKGS_DIRS'] = pkgs_dirs
 
-    if args.force:
+    if args.force and not args.update:
         # does not error if env doesnt exist
         # fixme: this should be different depending on if we are pretending
         # to be conda env create or conda env upgrade
