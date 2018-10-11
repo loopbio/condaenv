@@ -56,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('-n','--name')
     parser.add_argument('--download-only', action='store_true')
     parser.add_argument('--download-dir', default='./CACHE', help='used when --download-only requested default="./CACHE"')
+    parser.add_argument('-y', '--yes', action='store_true')
     args = parser.parse_args()
 
     dat = load_yaml(args.file)
@@ -87,6 +88,9 @@ if __name__ == "__main__":
         # fixme: this should be different depending on if we are pretending
         # to be conda env create or conda env upgrade
         subprocess.check_call(['conda', 'remove', '-n', name, '--all', '-y'])
+
+    if args.yes:
+        proc_args.append('-y')
 
     cdeps = extract_conda(dat)
 
