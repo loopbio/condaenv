@@ -112,7 +112,7 @@ if __name__ == "__main__":
             parser.error('dependencies must indicate channel: %s' % d)
 
         if chan not in chans:
-            args.extend(['--channel', chan])
+            proc_args.extend(['--channel', chan])
             chans[chan] = True
 
     # this command should be the whole world. user defaults have no place here
