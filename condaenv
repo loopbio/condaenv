@@ -129,15 +129,17 @@ if __name__ == "__main__":
     # add dependencies to command line
     proc_args.extend(cdeps)
 
-    print "====CONDAENV:", ' '.join(proc_args)
-
-    try:
-        subprocess.check_call(proc_args, env=proc_env)
-    except subprocess.CalledProcessError:
-        print "\nIF CONDA HAS AN UNFALSIFIABLE ERROR, IGNORE ITS BAD ADVICE"
-        print "YOU CAN TYPE FOR EXAMPLE TO LEARN ABOUT PACKAGE DEPENDENCIES"
-        print "\n\tconda search --info 'conda-forge::scikit-learn=0.19.0'\n"
-        parser.exit(1)
+    if cdeps:
+        print "====CONDAENV:", ' '.join(proc_args)
+        try:
+            subprocess.check_call(proc_args, env=proc_env)
+        except subprocess.CalledProcessError:
+            print "\nIF CONDA HAS AN UNFALSIFIABLE ERROR, IGNORE ITS BAD ADVICE"
+            print "YOU CAN TYPE FOR EXAMPLE TO LEARN ABOUT PACKAGE DEPENDENCIES"
+            print "\n\tconda search --info 'conda-forge::scikit-learn=0.19.0'\n"
+            parser.exit(1)
+    else:
+        print "====CONDAENV: no conda dependencies"
 
     # command exited successfully
 
