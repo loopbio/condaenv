@@ -33,11 +33,11 @@ def load_yaml(path):
         return yaml.load(f)
 
 
-def get_python_interpreter(env_name):
+def get_python_interpreter(conda, env_name):
     import json
 
     try:
-        dat = json.loads(subprocess.check_output(['conda', 'env', 'list', '--json']))
+        dat = json.loads(subprocess.check_output([conda, 'env', 'list', '--json']))
         for e in dat['envs']:
             if os.path.basename(e) == env_name:
                 return os.path.join(e, 'bin', 'python')
@@ -59,10 +59,11 @@ if __name__ == "__main__":
     parser.add_argument('--download-dir', default='./CACHE', help='used when --download-only requested default="./CACHE"')
     parser.add_argument('-y', '--yes', action='store_true')
     parser.add_argument('--update', action='store_true', help='update instead of creating the env')
+    parser.add_argument('--conda-binary', default='conda', help='path to conda binary')
     args = parser.parse_args()
 
     if args.version:
-        print "condaenv 0.1.1"
+        print "condaenv 0.1.2"
         parser.exit(0)
 
     if not args.file:
@@ -84,8 +85,12 @@ if __name__ == "__main__":
     else:
         proc_cmd = 'install'
 
+    conda_bin = args.conda_binary
 
-    proc_args = ['conda', proc_cmd, '-n', name]
+    # check conda is installed
+    subprocess.check_call([conda_bin, '--version'])
+
+    proc_args = [conda_bin, proc_cmd, '-n', name]
     proc_env = os.environ.copy()  # shell environment to run conda in
 
     if args.download_only:
@@ -101,7 +106,7 @@ if __name__ == "__main__":
         # does not error if env doesnt exist
         # fixme: this should be different depending on if we are pretending
         # to be conda env create or conda env upgrade
-        subprocess.check_call(['conda', 'remove', '-n', name, '--all', '-y'])
+        subprocess.check_call([conda_bin, 'remove', '-n', name, '--all', '-y'])
 
     if args.yes:
         proc_args.append('-y')
