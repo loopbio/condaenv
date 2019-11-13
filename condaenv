@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     # command exited successfully
 
-    pyexe = get_python_interpreter(name)
+    pyexe = get_python_interpreter(conda_bin, name)
     if pyexe:
         # we succeeded / user didnt abort
         pdeps = extract_pip(dat)
