@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import json
 import os.path
 import tempfile
 import subprocess
@@ -47,6 +47,17 @@ def get_python_interpreter(conda, env_name):
     return None
 
 
+def conda_version(conda_bin):
+    proc = subprocess.Popen([conda_bin, '--version'],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    assert proc.returncode == 0
+    assert stderr.startswith('conda ')
+    version = stderr.strip()[6:].split('.')
+    return tuple(int(x) if x.isdigit() else x for x in version)
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -88,7 +99,10 @@ if __name__ == "__main__":
     conda_bin = args.conda_binary
 
     # check conda is installed
-    subprocess.check_call([conda_bin, '--version'])
+    conda_ver = conda_version(conda_bin)
+    print "conda version: {}".format(conda_ver)
+
+    conda_root = json.loads(subprocess.check_output(['conda', 'info', '--json']))['root_prefix']
 
     proc_args = [conda_bin, proc_cmd, '-n', name]
     proc_env = os.environ.copy()  # shell environment to run conda in
@@ -164,7 +178,16 @@ if __name__ == "__main__":
             # we need to do this in a full subshell so that all the PATH and friends are
             # available for packages that build native code and they themselves call out
             # to pkg-config subshells
-            proc_args = ' '.join(['source', 'activate', name, ';'] + proc_args)
+            if conda_ver >= (4, 5):
+                conda_activate = [
+                    'source', os.path.join(conda_root, 'etc', 'profile.d', 'conda.sh'), '&&',
+                    'conda', 'activate', name
+                ]
+            else:
+                conda_activate = [
+                    'source', 'activate', name
+                ]
+            proc_args = ' '.join(conda_activate + ['&&'] + proc_args)
             shell = True
             executable = '/bin/bash'
 
